@@ -52,6 +52,7 @@ def hello():
         redis.rpush('distancia', distancia)
         print("--------------------------------------------------------------------")
         print("Se enviaron los datos a REDIS")
+        print(distancia)
   resp = make_response(render_template('index.html'))
   return resp
 

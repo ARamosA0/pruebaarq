@@ -41,11 +41,14 @@ async.retry(
 );
 
 function getVotes(client) {
-  client.query('SELECT vote, COUNT(id) AS count FROM votes GROUP BY vote', [], function(err, result) {
+  client.query('SELECT vote FROM votes', [], function(err, result) {
     if (err) {
       console.error("Error performing query: " + err);
     } else {
       var votes = collectVotesFromResult(result);
+      console.log("//////////////////////////////////////////////////////")
+      console.log(result)
+      console.log(result.count)
       io.sockets.emit("scores", JSON.stringify(votes));
     }
 
@@ -54,12 +57,13 @@ function getVotes(client) {
 }
 
 function collectVotesFromResult(result) {
-  var votes = {a: 0, b: 0};
+  var votes ={a:0};
 
   result.rows.forEach(function (row) {
+  //console.log("//////////////////////////////////////////////////////////////")
+ // console.log(row)
     votes[row.vote] = parseInt(row.count);
-  });
-
+  }); 
   return votes;
 }
 

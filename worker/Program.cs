@@ -25,7 +25,7 @@ namespace Worker
                 var keepAliveCommand = pgsql.CreateCommand();
                 keepAliveCommand.CommandText = "SELECT 1";
 
-                var definition = new { vote = "", voter_id = "" };
+                var definition = new { vote = ""};
                 while (true)
                 {
                     // Slow down to prevent CPU spike, only query each 100ms
@@ -38,8 +38,7 @@ namespace Worker
                         redis = redisConn.GetDatabase();
                     }
                     string json = redis.ListLeftPopAsync("distancia").Result;
-                    Console.WriteLine("DATA DE REDIS");
-                    Console.WriteLine(json);
+                   // Console.WriteLine(json);
                     if (json != null)
                     {
                         Console.WriteLine(json);
@@ -51,6 +50,8 @@ namespace Worker
                         }
                         else
                         { // Normal +1 vote requested
+                          
+                            Console.WriteLine(json);
                             UploadPostgres(pgsql, json);
                         }
                     }
@@ -95,7 +96,6 @@ namespace Worker
 
             var command = connection.CreateCommand();
             command.CommandText = @"CREATE TABLE IF NOT EXISTS votes (
-                                        id VARCHAR(255) NOT NULL UNIQUE,
                                         vote VARCHAR(255) NOT NULL
                                     )";
             command.ExecuteNonQuery();
@@ -137,11 +137,16 @@ namespace Worker
             {
                 command.CommandText = "INSERT INTO votes ( vote) VALUES ( @vote)";
                 command.Parameters.AddWithValue("@vote", data);
+                Console.WriteLine(data);
                 command.ExecuteNonQuery();
             }
-            catch (DbException)
+            catch (DbException ex)
             {
                 Console.WriteLine("No se puede ");
+                Console.WriteLine("Database Exception:");
+            Console.WriteLine($"Message: {ex.Message}");
+            Console.WriteLine($"Source: {ex.Source}");
+            Console.WriteLine($"ErrorCode: {ex.ErrorCode}");
             }
             finally
             {
@@ -149,25 +154,6 @@ namespace Worker
             }
 
         }
-        private static void UpdateVote(NpgsqlConnection connection, string voterId, string vote)
-        {
-            var command = connection.CreateCommand();
-            try
-            {
-                command.CommandText = "INSERT INTO votes (id, vote) VALUES (@id, @vote)";
-                command.Parameters.AddWithValue("@id", voterId);
-                command.Parameters.AddWithValue("@vote", vote);
-                command.ExecuteNonQuery();
-            }
-            catch (DbException)
-            {
-                command.CommandText = "UPDATE votes SET vote = @vote WHERE id = @id";
-                command.ExecuteNonQuery();
-            }
-            finally
-            {
-                command.Dispose();
-            }
-        }
+        
     }
 }
