@@ -47,7 +47,7 @@ function getVotes(client) {
     } else {
       var votes = collectVotesFromResult(result);
       console.log("//////////////////////////////////////////////////////")
-      console.log(result)
+      console.log(result.votes)
       console.log(result.count)
       io.sockets.emit("scores", JSON.stringify(votes));
     }

@@ -3,12 +3,34 @@
 # docker-compose v1.27+ required
 
 services:
+
+  puntuacion:
+    build: 
+      context: ./puntuacion
+      target: dev
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck: 
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    volumes:
+     - ./vote:/usr/local/app
+    ports:
+      - "5000:80"
+    networks:
+      - front-tier
+      - back-tier
+
   vote:
     build: 
       context: ./vote
       target: dev
     depends_on:
-      redis:
+      dbgeneral:
         condition: service_healthy
     healthcheck: 
       test: ["CMD", "curl", "-f", "http://localhost"]
@@ -76,6 +98,20 @@ services:
     networks:
       - back-tier
 
+  dbgeneral:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_NAME: "postgres"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+    volumes:
+      - "db-data:/var/lib/postgresql/data"
+      - "./healthchecks:/healthchecks"
+    healthcheck:
+      test: /healthchecks/postgres.sh
+      interval: "5s"
+    networks:
+      - back-tier
   # this service runs once to seed the database with votes
   # it won't run unless you specify the "seed" profile
   # docker compose --profile seed up -d
